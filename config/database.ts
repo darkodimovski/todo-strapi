@@ -1,18 +1,23 @@
-export default ({ env }) => ({
-  connection: {
-    client: 'postgres',
+export default ({ env }) => {
+  const client = env('DATABASE_CLIENT', 'sqlite');
+
+  return {
     connection: {
-      host: env('DATABASE_HOST'),
-      port: env.int('DATABASE_PORT'),
-      database: env('DATABASE_NAME'),
-      user: env('DATABASE_USERNAME'),
-      password: env('DATABASE_PASSWORD'),
-      ssl: env.bool('DATABASE_SSL') ? {
-        rejectUnauthorized: false
-      } : false,
-      schema: env('DATABASE_SCHEMA', 'public'),
+      client,
+      connection:
+        client === 'mysql'
+          ? {
+              host: env('DATABASE_HOST', 'localhost'),
+              port: env.int('DATABASE_PORT', 3306),
+              database: env('DATABASE_NAME', 'strapi'),
+              user: env('DATABASE_USERNAME', 'strapi'),
+              password: env('DATABASE_PASSWORD', 'strapi'),
+              ssl: env.bool('DATABASE_SSL', false) ? { rejectUnauthorized: false } : false,
+            }
+          : {
+              filename: env('DATABASE_FILENAME', '.tmp/data.db'),
+            },
+      useNullAsDefault: client === 'sqlite',
     },
-    pool: { min: 2, max: 10 },
-    acquireConnectionTimeout: 60000,
-  },
-});
+  };
+};
