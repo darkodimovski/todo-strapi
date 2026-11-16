@@ -1,0 +1,63 @@
+{
+  "kind": "collectionType",
+  "collectionName": "recurring_todos",
+  "info": {
+    "singularName": "recurring-todo",
+    "pluralName": "recurring-todos",
+    "displayName": "Recurring ToDo",
+    "description": "Template that creates a ToDo every week or month"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "frequency": {
+      "type": "enumeration",
+      "enum": ["weekly", "monthly"],
+      "default": "weekly",
+      "required": true
+    },
+    "weekday": {
+      "type": "integer",
+      "min": 1,
+      "max": 7,
+      "default": 1
+    },
+    "monthDay": {
+      "type": "integer",
+      "min": 1,
+      "max": 31,
+      "default": 1
+    },
+    "leadDays": {
+      "type": "integer",
+      "min": 0,
+      "max": 30,
+      "default": 2
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "lastGeneratedFor": {
+      "type": "date"
+    },
+    "assignee": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "project": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::project.project"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "kind": "collectionType",
+  "collectionName": "project_templates",
+  "info": {
+    "singularName": "project-template",
+    "pluralName": "project-templates",
+    "displayName": "Project Template",
+    "description": "Reusable project with a standard list of ToDos"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "durationDays": {
+      "type": "integer",
+      "min": 1,
+      "default": 30
+    },
+    "todos": {
+      "type": "json"
+    }
+  }
+}

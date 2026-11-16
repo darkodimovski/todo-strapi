@@ -1,0 +1,90 @@
+import type { Core } from '@strapi/strapi';
+
+/**
+ * Permission policy, applied on every start so local and production databases
+ * end up with the same, safe settings (permissions otherwise live only in the DB
+ * and are easy to get wrong in the admin panel).
+ *
+ * - Public (not logged in) may only log in / reset a password.
+ * - Logged-in roles get what the frontend needs; nothing more is removed from them
+ *   except the ability to edit role permissions from the public API.
+ */
+
+const PUBLIC_ALLOWED = new Set([
+  'plugin::users-permissions.auth.callback',
+  'plugin::users-permissions.auth.connect',
+  'plugin::users-permissions.auth.emailConfirmation',
+  'plugin::users-permissions.auth.forgotPassword',
+  'plugin::users-permissions.auth.resetPassword',
+  'plugin::users-permissions.auth.sendEmailConfirmation',
+]);
+
+// Never allowed for the generic "authenticated" role (any self-registered user).
+const AUTHENTICATED_DENIED = [
+  'plugin::users-permissions.role.updateRole',
+  'plugin::users-permissions.role.createRole',
+  'plugin::users-permissions.role.deleteRole',
+];
+
+const crud = (uid: string, actions: string[]) => actions.map((a) => `${uid}.${a}`);
+
+// Make sure these exist for the app's roles (added if missing, never removed).
+const REQUIRED: Record<string, string[]> = {
+  super_admin: [
+    ...crud('api::recurring-todo.recurring-todo', ['find', 'findOne', 'create', 'update', 'delete', 'generate']),
+    ...crud('api::project-template.project-template', [
+      'find',
+      'findOne',
+      'create',
+      'update',
+      'delete',
+      'apply',
+      'fromProject',
+    ]),
+  ],
+  backoffice_specialist: [
+    // photos on ToDos
+    'plugin::upload.content-api.find',
+    'plugin::upload.content-api.findOne',
+    'plugin::upload.content-api.upload',
+    'plugin::users-permissions.user.me',
+    ...crud('api::recurring-todo.recurring-todo', ['find', 'findOne']),
+    ...crud('api::project-template.project-template', ['find', 'findOne']),
+  ],
+};
+
+export async function applyPermissionPolicy(strapi: Core.Strapi) {
+  const roleQuery = strapi.db.query('plugin::users-permissions.role');
+  const permQuery = strapi.db.query('plugin::users-permissions.permission');
+
+  const roles = await roleQuery.findMany({ populate: ['permissions'] });
+  const removed: string[] = [];
+  const added: string[] = [];
+
+  for (const role of roles) {
+    const perms: { id: number; action: string }[] = role.permissions || [];
+
+    const toRemove = perms.filter((p) => {
+      if (role.type === 'public') return !PUBLIC_ALLOWED.has(p.action);
+      if (role.type === 'authenticated') return AUTHENTICATED_DENIED.includes(p.action);
+      return false;
+    });
+    for (const p of toRemove) {
+      await permQuery.delete({ where: { id: p.id } });
+      removed.push(`${role.name}: ${p.action}`);
+    }
+
+    const have = new Set(perms.map((p) => p.action));
+    for (const action of REQUIRED[role.type] || []) {
+      if (have.has(action)) continue;
+      // skip content types that don't exist (yet) in this build
+      const uid = action.startsWith('api::') ? action.split('.').slice(0, 2).join('.') : null;
+      if (uid && !strapi.contentTypes[uid as keyof typeof strapi.contentTypes]) continue;
+      await permQuery.create({ data: { action, role: role.id } });
+      added.push(`${role.name}: ${action}`);
+    }
+  }
+
+  if (removed.length) strapi.log.info(`[permissions] removed ${removed.length}: ${removed.join(', ')}`);
+  if (added.length) strapi.log.info(`[permissions] added ${added.length}: ${added.join(', ')}`);
+}
