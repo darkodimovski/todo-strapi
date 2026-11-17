@@ -1,0 +1,37 @@
+# Production stack: Strapi (SQLite) behind Caddy with automatic HTTPS.
+# Values come from .env next to this file (create it with scripts/init-env.sh).
+services:
+  strapi:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 1337
+      DATABASE_CLIENT: sqlite
+      DATABASE_FILENAME: /app/data/data.db
+    volumes:
+      - ./data/db:/app/data
+      - ./data/uploads:/app/public/uploads
+    expose:
+      - "1337"
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - strapi
+
+volumes:
+  caddy_data:
+  caddy_config:

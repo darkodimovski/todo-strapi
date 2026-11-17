@@ -531,7 +531,9 @@ export interface ApiRecurringTodoRecurringTodo
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     description: Schema.Attribute.Text;
-    frequency: Schema.Attribute.Enumeration<['weekly', 'monthly']> &
+    frequency: Schema.Attribute.Enumeration<
+      ['workdays', 'daily', 'weekly', 'monthly']
+    > &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'weekly'>;
     lastGeneratedFor: Schema.Attribute.Date;

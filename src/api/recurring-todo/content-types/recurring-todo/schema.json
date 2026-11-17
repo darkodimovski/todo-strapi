@@ -20,7 +20,7 @@
     },
     "frequency": {
       "type": "enumeration",
-      "enum": ["weekly", "monthly"],
+      "enum": ["workdays", "daily", "weekly", "monthly"],
       "default": "weekly",
       "required": true
     },

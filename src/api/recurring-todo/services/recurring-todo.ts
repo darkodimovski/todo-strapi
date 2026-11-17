@@ -1,6 +1,11 @@
 /**
  * Recurring ToDos: each active template creates a normal ToDo `leadDays`
- * before its next due date (weekly on a weekday, or monthly on a day of month).
+ * before its next due date:
+ *   workdays – every Monday–Friday
+ *   daily    – every day
+ *   weekly   – on a weekday
+ *   monthly  – on a day of month (31 = last day)
+ * Daily templates are always created on the due day itself.
  */
 import { factories } from '@strapi/strapi';
 
@@ -22,6 +27,13 @@ const daysInMonth = (y: number, m: number) => new Date(Date.UTC(y, m + 1, 0)).ge
 /** Next due date on or after `fromIso` for this template. */
 export function nextDueDate(rt: { frequency: string; weekday?: number; monthDay?: number }, fromIso: string): string {
   const from = toUtc(fromIso);
+
+  if (rt.frequency === 'daily') return fromIso;
+
+  if (rt.frequency === 'workdays') {
+    const dow = from.getUTCDay(); // 0 = Sunday, 6 = Saturday
+    return addDaysIso(fromIso, dow === 6 ? 2 : dow === 0 ? 1 : 0);
+  }
 
   if (rt.frequency === 'monthly') {
     const want = rt.monthDay || 1;
@@ -58,7 +70,9 @@ export default factories.createCoreService(UID, ({ strapi }) => ({
       // after an occurrence was created, look for the one after it
       const from = rt.lastGeneratedFor && rt.lastGeneratedFor >= today ? addDaysIso(rt.lastGeneratedFor, 1) : today;
       const due = nextDueDate(rt, from);
-      if (diffDays(due, today) > (rt.leadDays ?? 2)) continue;
+      const isDaily = rt.frequency === 'daily' || rt.frequency === 'workdays';
+      const lead = isDaily ? 0 : rt.leadDays ?? 2;
+      if (diffDays(due, today) > lead) continue;
       if (rt.lastGeneratedFor && due <= rt.lastGeneratedFor) continue;
 
       await strapi.documents('api::todo.todo').create({

@@ -1,0 +1,8 @@
+# HTTPS certificate is requested automatically from Let's Encrypt.
+{$API_DOMAIN} {
+	encode gzip
+	request_body {
+		max_size 50MB
+	}
+	reverse_proxy strapi:1337
+}

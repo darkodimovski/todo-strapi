@@ -105,5 +105,12 @@ export default {
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     await applyPermissionPolicy(strapi);
+
+    // catch up on recurring ToDos missed while the server was off (e.g. a laptop at 06:00)
+    try {
+      await strapi.service('api::recurring-todo.recurring-todo').generateDue();
+    } catch (err) {
+      strapi.log.warn(`[recurring] startup run failed: ${err?.message}`);
+    }
   },
 };
