@@ -1,5 +1,5 @@
 import type { Core } from '@strapi/strapi';
-import { applyPermissionPolicy } from './bootstrap/permissions';
+import { applyAuthSettings, applyPermissionPolicy } from './bootstrap/permissions';
 
 const TODO_UID = 'api::todo.todo';
 const PUSH_UID = 'api::push-subscription.push-subscription';
@@ -105,6 +105,7 @@ export default {
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     await applyPermissionPolicy(strapi);
+    await applyAuthSettings(strapi);
 
     // catch up on recurring ToDos missed while the server was off (e.g. a laptop at 06:00)
     try {

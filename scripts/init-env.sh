@@ -34,6 +34,7 @@ cat > .env <<EOF
 API_DOMAIN=${API_DOMAIN}
 PUBLIC_URL=https://${API_DOMAIN}
 CORS_ORIGINS=${FRONTEND_URL%/}
+FRONTEND_URL=${FRONTEND_URL%/}
 
 APP_KEYS=$(rand),$(rand),$(rand),$(rand)
 API_TOKEN_SALT=$(rand)

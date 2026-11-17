@@ -70,6 +70,11 @@
       "relation": "oneToMany",
       "target": "api::todo.todo",
       "mappedBy": "assignee"
+    },
+    "pendingApproval": {
+      "type": "boolean",
+      "default": false,
+      "private": true
     }
   }
 }
