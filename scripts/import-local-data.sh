@@ -11,6 +11,8 @@ SRC="${1:-$HOME/import}"
 
 docker compose stop strapi 2>/dev/null || true
 mkdir -p data/db data/uploads
+# Docker creates the mounted folders as root; make them ours
+sudo chown -R "$USER":"$USER" data
 
 if [ -f data/db/data.db ]; then
   mv data/db/data.db "data/db/data.db.before-import-$(date +%s)"
