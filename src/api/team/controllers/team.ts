@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 
 const USER_UID = 'plugin::users-permissions.user';
-const ROLE_TYPES = { manager: 'super_admin', specialist: 'backoffice_specialist' } as const;
+const ROLE_TYPES = { manager: 'super_admin', specialist: 'backoffice_specialist', viewer: 'viewer' } as const;
 type RoleKey = keyof typeof ROLE_TYPES;
 
 const frontendUrl = () =>

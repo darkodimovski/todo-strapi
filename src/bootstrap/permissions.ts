@@ -45,6 +45,16 @@ const REQUIRED: Record<string, string[]> = {
     ...crud('api::todo-estimate.todo-estimate', ['find', 'update']),
     'plugin::users-permissions.auth.changePassword',
   ],
+  // read only: no create / update / delete anywhere
+  viewer: [
+    ...crud('api::todo.todo', ['find', 'findOne']),
+    ...crud('api::project.project', ['find', 'findOne']),
+    ...crud('api::client.client', ['find', 'findOne']),
+    'plugin::users-permissions.user.find',
+    'plugin::users-permissions.user.findOne',
+    'plugin::users-permissions.user.me',
+    'plugin::users-permissions.auth.changePassword',
+  ],
   backoffice_specialist: [
     // photos on ToDos
     'plugin::upload.content-api.find',
@@ -100,6 +110,14 @@ export async function applyPermissionPolicy(strapi: Core.Strapi) {
   const roleQuery = strapi.db.query('plugin::users-permissions.role');
   const permQuery = strapi.db.query('plugin::users-permissions.permission');
 
+  // read-only "Viewer" role (showcase / demo accounts)
+  if (!(await roleQuery.findOne({ where: { type: 'viewer' } }))) {
+    await roleQuery.create({
+      data: { name: 'Viewer', type: 'viewer', description: 'Read-only access (showcase)' },
+    });
+    strapi.log.info('[permissions] created role "Viewer"');
+  }
+
   const roles = await roleQuery.findMany({ populate: ['permissions'] });
   const removed: string[] = [];
   const added: string[] = [];
@@ -110,6 +128,7 @@ export async function applyPermissionPolicy(strapi: Core.Strapi) {
     const toRemove = perms.filter((p) => {
       if (role.type === 'public') return !PUBLIC_ALLOWED.has(p.action);
       if (role.type === 'authenticated') return AUTHENTICATED_DENIED.includes(p.action);
+      if (role.type === 'viewer') return !(REQUIRED.viewer || []).includes(p.action);
       return false;
     });
     for (const p of toRemove) {
