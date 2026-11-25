@@ -25,6 +25,7 @@
       "enum": [
         "todo",
         "in-progress",
+        "review",
         "done"
       ]
     },
@@ -53,6 +54,11 @@
         "videos",
         "audios"
       ]
+    },
+    "estimatedHours": {
+      "type": "decimal",
+      "min": 0,
+      "private": true
     }
   }
 }

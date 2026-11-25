@@ -81,6 +81,7 @@ export default factories.createCoreService(UID, ({ strapi }) => ({
           description: rt.description || '',
           dueDate: due,
           position: 'todo',
+          ...(rt.estimatedHours != null ? { estimatedHours: rt.estimatedHours } : {}),
           ...(rt.assignee ? { assignee: rt.assignee.documentId } : {}),
           ...(rt.project ? { project: rt.project.documentId } : {}),
         } as any,

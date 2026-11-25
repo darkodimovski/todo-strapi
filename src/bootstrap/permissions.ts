@@ -42,6 +42,7 @@ const REQUIRED: Record<string, string[]> = {
       'fromProject',
     ]),
     ...crud('api::team.team', ['find', 'invite', 'update', 'remove', 'resendInvite']),
+    ...crud('api::todo-estimate.todo-estimate', ['find', 'update']),
     'plugin::users-permissions.auth.changePassword',
   ],
   backoffice_specialist: [

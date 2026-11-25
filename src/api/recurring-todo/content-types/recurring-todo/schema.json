@@ -20,7 +20,12 @@
     },
     "frequency": {
       "type": "enumeration",
-      "enum": ["workdays", "daily", "weekly", "monthly"],
+      "enum": [
+        "workdays",
+        "daily",
+        "weekly",
+        "monthly"
+      ],
       "default": "weekly",
       "required": true
     },
@@ -58,6 +63,10 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::project.project"
+    },
+    "estimatedHours": {
+      "type": "decimal",
+      "min": 0
     }
   }
 }

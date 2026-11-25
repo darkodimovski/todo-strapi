@@ -74,7 +74,7 @@ export default factories.createCoreService(UID, ({ strapi }) => ({
       where: {
         publishedAt: { $notNull: true }, // draft & published rows both exist: count each ToDo once
         dueDate: { $notNull: true, $lte: tomorrow },
-        $or: [{ position: { $ne: 'done' } }, { position: { $null: true } }],
+        $or: [{ position: { $notIn: ['done', 'review'] } }, { position: { $null: true } }],
         assignee: onlyUserId ? { id: onlyUserId } : { id: { $notNull: true } },
       },
       populate: ['assignee'],
@@ -154,12 +154,17 @@ export default factories.createCoreService(UID, ({ strapi }) => ({
     });
 
     let done = 0;
+    let inReview = 0;
     let overdue = 0;
     let open = 0;
     const overdueBy = new Map<string, number>();
     for (const t of todos) {
       if (t.position === 'done') {
         if (new Date(t.updatedAt) >= monday) done++;
+        continue;
+      }
+      if (t.position === 'review') {
+        inReview++;
         continue;
       }
       open++;
@@ -178,12 +183,12 @@ export default factories.createCoreService(UID, ({ strapi }) => ({
 
     const delivered = await this.sendToManagers({
       title: `📊 Week: ${done} done, ${overdue} overdue`,
-      body: `${open} open ToDos.${top ? ` Most overdue – ${top}.` : ''}`,
+      body: `${open} open, ${inReview} waiting for your review.${top ? ` Most overdue – ${top}.` : ''}`,
       url: '/report',
       tag: 'weekly-report',
     });
     strapi.log.info(`[push] weekly report sent to managers (${delivered} notification(s))`);
-    return { done, overdue, open, delivered };
+    return { done, inReview, overdue, open, delivered };
   },
 
   /** Alert (push + e-mail if configured) when a ToDo gets a new assignee. */
