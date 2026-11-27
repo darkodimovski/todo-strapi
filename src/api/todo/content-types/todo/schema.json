@@ -59,6 +59,15 @@
       "type": "decimal",
       "min": 0,
       "private": true
+    },
+    "checkedBy": {
+      "type": "string"
+    },
+    "checkedAt": {
+      "type": "datetime"
+    },
+    "checkNote": {
+      "type": "text"
     }
   }
 }

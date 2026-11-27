@@ -48,6 +48,9 @@ export default {
 
       const params = context.params as { documentId?: string; data?: Record<string, unknown> };
 
+      const before = context.action === 'update' ? await snapshot(strapi, params.documentId) : null;
+      const data = params.data;
+
       // rules for non-managers: no estimated hours, and "done" means "send for review"
       const requestUser = strapi.requestContext.get()?.state?.user;
       let requesterIsManager = false;
@@ -56,18 +59,29 @@ export default {
           .query('plugin::users-permissions.role')
           .findOne({ where: { users: { id: requestUser.id } } });
         requesterIsManager = role?.type === 'super_admin';
-        if (!requesterIsManager && params.data) {
-          delete params.data.estimatedHours;
-          if (params.data.position === 'done') {
-            // already approved ToDos stay done when someone edits them
-            const current =
-              context.action === 'update' ? (await snapshot(strapi, params.documentId))?.position : null;
-            if (current !== 'done') params.data.position = 'review';
-          }
+        if (!requesterIsManager && data) {
+          delete data.estimatedHours;
+          delete data.checkNote;
+          // already approved ToDos stay done when someone edits them
+          if (data.position === 'done' && before?.position !== 'done') data.position = 'review';
         }
       }
 
-      const before = context.action === 'update' ? await snapshot(strapi, params.documentId) : null;
+      // "Checked by manager": only the server sets who and when
+      if (requestUser && data) {
+        delete data.checkedBy;
+        delete data.checkedAt;
+        if (data.position === 'done' && before?.position !== 'done' && requesterIsManager) {
+          data.checkedBy = requestUser.username;
+          data.checkedAt = new Date().toISOString();
+          data.checkNote = String(data.checkNote || '').trim() || null;
+        } else if (data.position && data.position !== 'done' && before?.position === 'done') {
+          // reopened: the old check no longer applies
+          data.checkedBy = null;
+          data.checkedAt = null;
+          data.checkNote = null;
+        }
+      }
 
       const result: any = await next();
 
@@ -124,7 +138,9 @@ export default {
             if (assigneeId && assigneeId !== actorId) {
               await push.sendToUser(assigneeId, {
                 title: `✅ Approved: ${title}`,
-                body: `${actorName} approved your work.`,
+                body: (result as any)?.checkNote
+                  ? `${actorName}: ${String((result as any).checkNote).slice(0, 160)}`
+                  : `${actorName} approved your work.`,
                 url: '/todos',
                 tag: tag('approved'),
               });
@@ -162,7 +178,9 @@ export default {
           // 5) new note in the description history
           const prevNotes = String(before.descriptionHistory || '').trim();
           const notes = String(after.descriptionHistory || '').trim();
-          if (notes && notes !== prevNotes && notes.length > prevNotes.length) {
+          // (an approval adds its own history line; the "Approved" alert already covers it)
+          const justApproved = after.position === 'done' && before.position !== 'done';
+          if (!justApproved && notes && notes !== prevNotes && notes.length > prevNotes.length) {
             const payload = {
               title: `💬 ${actorName} on: ${title}`,
               body: lastLine(notes).slice(0, 160),
