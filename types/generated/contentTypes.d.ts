@@ -602,6 +602,9 @@ export interface ApiTodoTodo extends Struct.CollectionTypeSchema {
       'manyToOne',
       'plugin::users-permissions.user'
     >;
+    checkedAt: Schema.Attribute.DateTime;
+    checkedBy: Schema.Attribute.String;
+    checkNote: Schema.Attribute.Text;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
