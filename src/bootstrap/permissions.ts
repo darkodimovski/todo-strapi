@@ -62,6 +62,9 @@ const REQUIRED: Record<string, string[]> = {
     'plugin::upload.content-api.upload',
     'plugin::users-permissions.user.me',
     'plugin::users-permissions.auth.changePassword',
+    // Projects / Timeline pages (read only)
+    ...crud('api::project.project', ['find', 'findOne']),
+    ...crud('api::client.client', ['find', 'findOne']),
     ...crud('api::recurring-todo.recurring-todo', ['find', 'findOne']),
     ...crud('api::project-template.project-template', ['find', 'findOne']),
   ],
